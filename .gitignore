@@ -1,6 +1,7 @@
 ## General
 ## Private config
 *.ini
+*.bat
 Megaface/*.png
 
 # Compiled Object files

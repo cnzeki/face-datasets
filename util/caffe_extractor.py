@@ -47,6 +47,6 @@ class CaffeExtractor:
         
     def extract(self, img_path):
         im = cv.imread(img_path)
-        return extract_feature(im)
+        return self.extract_feature(im)
         
     

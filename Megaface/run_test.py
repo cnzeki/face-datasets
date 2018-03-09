@@ -2,7 +2,9 @@
 import cv2
 import os,sys
 import time
-import os.path
+sys.path.insert(0, '../facealign')
+sys.path.insert(0, '../util')  
+
 from fileutil import *
 from alignment import cv2_imread
 from matio import save_mat, load_mat
