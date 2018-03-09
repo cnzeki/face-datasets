@@ -1,0 +1,25 @@
+[facescrub]
+image_dir=YOUR_PATH/MegaFace/MegaFace
+aligned_dir=YOUR_PATH/MegaFace/MegaFace_aligned
+feature_dir=YOUR_PATH/MegaFace/MegaFace_features
+
+[megaface]
+image_dir=YOUR_PATH/MegaFace/facescrub
+aligned_dir=YOUR_PATH/MegaFace/facescrub_aligned
+feature_dir=YOUR_PATH/MegaFace/facescrub_features
+
+[devkit]
+templatelists_dir=YOUR_PATH/MegaFace/devkit/templatelists
+
+; test models
+[model]
+name=model_1
+gpu_id=0
+
+[model_1]
+model  =model_1.prototxt
+weights=model_1.caffemodel
+suffix =_model_1.bin
+
+
+
