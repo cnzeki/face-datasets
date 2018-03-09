@@ -15,6 +15,7 @@ templatelists_dir=YOUR_PATH/MegaFace/devkit/templatelists
 [model]
 name=model_1
 gpu_id=0
+feat_layer=fc5
 
 [model_1]
 model  =model_1.prototxt

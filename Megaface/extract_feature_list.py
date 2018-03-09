@@ -15,29 +15,24 @@ from config import Config
 import json
 import argparse
 
-
-def load_extractor( model, weights, gpu_id = 0 ):
-    # init extractor
-    extractor = CaffeExtractor(model, weights, gpu_id)
-    return extractor
-    
-
+SKIP_EXIST = 0
 def extract_feature_list(rel_list, image_dir, feature_dir, suffix, extractor):
-    total_size = len(rel_list)  
+    total_size = len(rel_list) 
+    global SKIP_EXIST
     for i in range(total_size):
-        # make fullpath
-        path = os.path.join(image_dir, rel_list[i])
-        img = cv2_imread(path)
-        #print(path)
-        #print(img.shape)
-        feat = extractor.extract_feature(img)
-        feat_path = translate_path(image_dir, feature_dir, path)
-        feat_path = feat_path + suffix
-        makedirs(feat_path)
-        save_mat(feat_path, feat)
         if i % 100 == 0:
             print('%6d/%6d %s' % (i, total_size, rel_list[i]))
-            
+        # make fullpath
+        path = os.path.join(image_dir, rel_list[i])
+        # feature path
+        feat_path = translate_path(image_dir, feature_dir, path)
+        feat_path = feat_path + suffix
+        if SKIP_EXIST and os.path.exists(feat_path):
+            continue
+        img = cv2_imread(path)
+        feat = extractor.extract_feature(img)
+        makedirs(feat_path)
+        save_mat(feat_path, feat)     
 
 def load_feature_list(rel_list, image_dir, feature_dir, suffix):
     total_size = len(rel_list) 
@@ -73,11 +68,11 @@ def extract_megaface_features_list(mega_dir, templatelist, feature_dir, suffix, 
     
     
 def extract_megaface_features(mega_dir, templatelists_dir, feature_dir, suffix, extractor):
-    for i in range(1,6):
+    for i in range(1,7):
         set_size = 10**i
         json_path = 'megaface_features_list.json_%d_1' % (set_size)
+        print('\n\nRun: '+json_path)
         json_path = os.path.join(templatelists_dir,json_path)
-        print(json_path)
         extract_megaface_features_list(mega_dir, json_path, feature_dir, suffix, extractor)
         
         
@@ -92,12 +87,24 @@ if __name__=='__main__':
     model_name = config.get('model').name
     if len(sys.argv) >= 3:
         model_name = sys.argv[2]
+    if config.get('model').skip_exist:
+        SKIP_EXIST = config.get('model').skip_exist
         
     # load model
+    feat_layer = 'fc5'
+    if config.get('model').feat_layer:
+        featLayer = config.get('model').feat_layer
+    if config.get(model_name).feat_layer != None:
+        feat_layer = config.get(model_name).feat_layer
+  
     model = config.get(model_name).model
     weights = config.get(model_name).weights
     suffix = config.get(model_name).suffix
-    extractor = load_extractor(model, weights, config.get('model').gpu_id)
+    
+    print('Test model:%s feat:%s suffix:%s' % (model_name, feat_layer, suffix))
+    
+    extractor = CaffeExtractor(model, weights, featLayer = feat_layer, 
+      gpu_id = config.get('model').gpu_id)
 
     # devkit/templatelists
     templatelists_dir = config.get('devkit').templatelists_dir

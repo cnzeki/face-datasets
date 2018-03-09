@@ -57,8 +57,3 @@ class Config:
                                          "configuration, error: %s" %
                                          (section, e))
 
-if __name__ == "__main__":
-    conf = Config()
-    print conf.get("facescrub").image_dir
-    print conf.get("model").gpu_id
-    print conf.get("tzk").suffix
