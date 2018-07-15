@@ -36,19 +36,17 @@ def model_factory(name, do_mirror):
     model_func = model_dict[name]
     return model_func(do_mirror)
 ```
+
+
 Run your test with:
 	python run_verify.py yours 
-<<<<<<< HEAD
+
 
 By default verification will be done with `cosine` distance measure, to test with `L2` distance, run with
+
 	python run_verify.py yours L2
 
-And to save testing time , the horizontal flip feature is not used, if you want to use it ,run with
-=======
-By default verification will be done with `cosine` distance measure, to test with `L2` distance, run with
-	python run_verify.py yours L2
 Add to save testing time , the horizontal flip feature is not used, if you want to use it ,run with
->>>>>>> 48576a78918cbed9eec709a6c1a2f805a0b50b89
 	python run_verify.py yours L2 1
 
 ### 3. Test other models.
@@ -61,8 +59,5 @@ This is the result I got with default test configuration (flip not used, cosine 
 | sphereface |   96x112   | 0.98550+-0.00500 | 0.9930  |
 | AMSoftmax  |   96x112   | 0.98417+-0.00512 | 0.9908  |
 |  arcface   |  112x112   | 0.99567+-0.00343 | 0.9974  |
-
-
-
 
 
