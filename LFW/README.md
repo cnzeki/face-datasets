@@ -37,11 +37,13 @@ def model_factory(name, do_mirror):
     return model_func(do_mirror)
 ```
 Run your test with:
-`python run_verify.py yours
+	python run_verify.py yours 
+
 By default verification will be done with `cosine` distance measure, to test with `L2` distance, run with
-`python run_verify.py yours L2`
-Add to save testing time , the horizontal flip feature is not used, if you want to use it ,run with
-`python run_verify.py yours L2 1`
+	python run_verify.py yours L2
+
+And to save testing time , the horizontal flip feature is not used, if you want to use it ,run with
+	python run_verify.py yours L2 1
 
 ### 3. Test other models.
 First follow the github link to each project and download the `caffe` version of the model. Extract files to the corresponding directory  under `models`. 
