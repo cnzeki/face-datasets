@@ -22,6 +22,7 @@ class CaffeExtractor:
     def norm_image(_im):
         #im = cv.cvtColor(im, cv.COLOR_RGB2BGR)
         img = np.float32(_im)
+        #img = _im.astype(np.float32)
         img = (img - 127.5) / 128
         img = np.transpose(img, [2, 0, 1])
         return img
@@ -29,7 +30,9 @@ class CaffeExtractor:
     def extract_image(self, im):
         # im = caffe.io.load_image(img_path)
         # self.net.blobs['data'].data[...] = self.transformer.preprocess('data', im)
-        self.net.blobs['data'].data[...] = self.norm_image(im)
+        img = self.norm_image(im)
+        #print(img)
+        self.net.blobs['data'].data[...] = img
         self.net.forward()
         feat1 = self.net.blobs[self.featLayer].data[0].flatten()
         return feat1

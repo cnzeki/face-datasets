@@ -175,7 +175,8 @@ def test_dir(model_dir,dist_type='cosine',do_mirror=False):
         if ext != '.caffemodel':
             continue
         # test the model
-        test_model(model_dir+'/deploy.prototxt',filename,dist_type,do_mirror)
+        model_path = os.path.join(model_dir, filename)
+        test_model(model_dir+'/deploy.prototxt',model_path,dist_type,do_mirror)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -194,5 +195,5 @@ if __name__ == '__main__':
     if args.weights:
         test_model(args.model,args.weights,args.dist_type,args.do_mirror)
     else:
-        test_dir(args.model_dir,args.dist_type,args.do_mirror)
+        test_dir(args.model,args.dist_type,args.do_mirror)
 
