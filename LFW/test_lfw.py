@@ -163,8 +163,8 @@ def test_loss(extractor, weight, dist_type):
         f.write( 'precision on lfw:%.4f threshold:%f ' % (precision, threshold) )
 
         
-def test_model(model, weight,dist_type='cosine',do_mirror=False):
-    extractor = CaffeExtractor(model, weight,do_mirror=do_mirror )
+def test_model(model, weight,dist_type='cosine',do_mirror=False, feat_layer='fc5'):
+    extractor = CaffeExtractor(model, weight,do_mirror=do_mirror, featLayer=feat_layer )
     test_loss(extractor, weight, dist_type)
     #test_loss(extractor, weight, 'SSD')
 
@@ -184,6 +184,7 @@ if __name__ == '__main__':
     parser.add_argument("--lfw_pair", help="lfw pair file")
     parser.add_argument("--model", help="model prototxt OR dir")
     parser.add_argument("--weights", help="model weights")
+    parser.add_argument("--feat_layer", help="fc5")
     parser.add_argument("-t", "--dist_type", default='cosine', help="distance measure ['cosine', 'L2', 'SSD']")
     parser.add_argument("-f", "--do_mirror", default=False,help="mirror image and concatinate features")
 

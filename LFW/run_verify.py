@@ -6,6 +6,8 @@ import logging
 import time
 import os
 import pickle
+import argparse
+import cv2
 
 from verification import verification
 from plot import draw_chart
@@ -17,7 +19,54 @@ sys.path.insert(0, '../util')
 from caffe_extractor import CaffeExtractor
 from distance import get_distance
 
-
+def parse_line(line):
+    splits = line.split()
+    # skip line
+    if len(splits) < 3:
+        return None
+    # name id1 id2
+    if len(splits) == 3:
+        return True, splits[0], splits[1], splits[0], splits[2]
+    # name1 id1 name2 id2
+    return False, splits[0], splits[1], splits[2], splits[3]
+    
+    
+def load_image_paris(pair_path, prefix):
+    pair_list = []
+    # parse pairs
+    with open(pair_path, 'r') as f:
+        for line in f.readlines():
+            pair = parse_line(line)
+            if pair is not None:
+                pair_list.append(pair)
+                # print(pair)
+    #print('#pairs:%d' % len(pair_list))
+    # compute feature
+    pos_img = []
+    neg_img = []
+    count = 0
+    for pair in pair_list:
+        count += 1
+        
+        img_path1 = '%s/%s/%s_%04d.jpg' % (prefix, pair[1], pair[1], int(pair[2]))
+        img_path2 = '%s/%s/%s_%04d.jpg' % (prefix, pair[3], pair[3], int(pair[4]))
+        rel_path1 = '%s/%s_%04d.jpg' % (pair[1], pair[1], int(pair[2]))
+        rel_path2 = '%s/%s_%04d.jpg' % (pair[3], pair[3], int(pair[4]))
+        # skip invalid pairs
+        if not os.path.exists(img_path1) or not os.path.exists(img_path2):
+            continue
+        img1 = cv2.imread(img_path1)
+        #img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2BGR)
+        img2 = cv2.imread(img_path2)
+        #img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
+        #print(img1.shape)
+        if pair[0]:
+            pos_img.append([img1, img2, rel_path1, rel_path2])
+        else:
+            neg_img.append([img1, img2, rel_path1, rel_path2])
+    return pos_img, neg_img
+        
+        
 def extract_feature(extractor, img_list):
     feat_list = []
     n = len(img_list)
@@ -36,7 +85,7 @@ def extract_feature(extractor, img_list):
 
 def crop_image_list(img_list, imsize):
     out_list = []
-    w, h = 112, 112
+    h, w, c = img_list[0][0].shape
     x1 = (w - imsize[0])/2
     y1 = (h - imsize[1])/2
     for pair in img_list:
@@ -90,7 +139,7 @@ def model_AMSoftmax(do_mirror):
         model_proto = model_dir + 'deploy.prototxt'
     model_path = model_dir + 'face_train_test_iter_30000.caffemodel'
     image_size = (96, 112)
-    extractor = CaffeExtractor(model_proto, model_path, do_mirror = False, featLayer='norm1')
+    extractor = CaffeExtractor(model_proto, model_path, do_mirror = False, featLayer='fc5')
     return extractor, image_size
     
     
@@ -112,44 +161,61 @@ def model_yours(do_mirror):
     extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc5')
     return extractor, image_size
 
-        
+def model_tzk(do_mirror):
+    model_dir = '/home/ysten/tzk/fr/insightface/caffe/AMSoftmax/'
+    model_proto = model_dir + 'deploy.prototxt'
+    model_path = model_dir + 'tune_iter_20000.caffemodel'
+    image_size = (112, 112)
+    extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc5')
+    return extractor, image_size
+
+    
 def model_factory(name, do_mirror):
     model_dict = {
         'centerface':model_centerface, 
         'sphereface':model_sphereface, 
-        'AMSoftmax':model_AMSoftmax, 
-        'arcface':model_arcface,
-        'model_yours':model_yours, 
+        'AMSoftmax' :model_AMSoftmax, 
+        'arcface'   :model_arcface,
+        'yours'     :model_yours, 
+        'tzk'       :model_tzk, 
     }
     model_func = model_dict[name]
     return model_func(do_mirror)
+
+def check_lfw_data():
+    pos_1, _ = load_image_paris('./pairs.txt', '/home/ysten/denghui/fr/LFW_TEST/data/lfw-112X96')
+    pos_2, _ = load_image_paris('./pairs.txt', 'lfw-96x112')
+    count = 0
+    for idx in range(len(pos_1)):
+        diff = np.float32(pos_1[idx][0]) - np.float32(pos_2[idx][0])
+        diff = np.abs(diff)
+        abs_sum = np.sum(diff) / (96*112*3)
+        if abs_sum > 20:
+            count += 1
+            print('%4d %6.3f %s -- %s' % (idx, abs_sum, pos_1[idx][2], pos_2[idx][2]) )
+    print('%d'%count)   
+    
     
 if __name__ == '__main__':
-    model_name = ''
-    lfw_path = './lfw.np'
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lfw_data", help=" lfw.np or lfw-112x112")
+    parser.add_argument("--model_name", help= 'specify which model to test \n'
+                                              ' centerface\n'
+                                              ' sphereface\n'
+                                              ' AMSoftmax\n'
+                                              ' arcface\n'
+                                              ' yours \n')
+    parser.add_argument("--dist_type", default='cosine', help="distance measure ['cosine', 'L2', 'SSD']")
+    parser.add_argument("--do_mirror", default=False, help="mirror image and concatinate features")
+
+    args = parser.parse_args()
     output_dir = '.'
-    dist_type = 'cosine'
-    do_mirror = False
-    # parse args
-    if len(sys.argv) < 2:
-        print('run_verify.py modelname [dist_type(`cosine` | `L2`)] [do_mirror(`0`| `1`)]'
-              'specify which model to test \n'
-              ' centerface\n'
-              ' sphereface\n'
-              ' AMSoftmax\n'
-              ' arcface\n'
-              ' yours \n'
-              )
-        exit()
-    # get model name
-    model_name = sys.argv[1]
-    # dist type
-    if len(sys.argv) > 2:
-        dist_type = sys.argv[2]
-    # do mirror
-    if len(sys.argv) > 3 and sys.argv[3] == '1':
-        do_mirror = True
-        
+    # parse args   
+    model_name = args.model_name
+    lfw_data = args.lfw_data
+    dist_type = args.dist_type
+    do_mirror = args.do_mirror
+    
     print('Testing  \t: %s' % model_name)
     print('Distance \t: %s' % dist_type)
     print('Do mirror\t: {}'.format(do_mirror))
@@ -157,13 +223,19 @@ if __name__ == '__main__':
     extractor, image_size = model_factory(model_name, do_mirror)
     print('Testing model\t: %s' % (extractor.weight))
     print('Image size\t: {}'.format(image_size))
-    # extract feature
-    pos_img, neg_img = pickle.load(open(lfw_path, 'rb'))
-    print('Lfw pairs\t: {}'.format(len(pos_img)))
+    # load images
+    if lfw_data.find('.np') > 0:
+        pos_img, neg_img = pickle.load(open(lfw_data, 'rb'))
+        #pos_img, neg_img = pickle.load(open(lfw_data, 'rb'), encoding='iso-8859-1')
+        
+    else:
+        pos_img, neg_img = load_image_paris('./pairs.txt', lfw_data)
+        
     # crop image
     pos_img = crop_image_list(pos_img, image_size)
     neg_img = crop_image_list(neg_img, image_size)
-    #pos_img, neg_img = pickle.load(open(lfw_path, 'rb'), encoding='iso-8859-1')
+    #print(type(pos_img[0][0]))
+    #exit()  
     # compute feature
     print('Extracting features ...')
     pos_list = extract_feature(extractor, pos_img)

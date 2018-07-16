@@ -316,6 +316,8 @@ class MtcnnDetector(object):
         """
         caffe.set_mode_gpu()
         caffe.set_device(gpu_id)
+        cwd = os.path.abspath(os.path.dirname(__file__))
+        model_folder = cwd + '/model/'
         # Load models.
         prototxt = [model_folder + x + '.prototxt' for x in ['det1', 'det2', 'det3']]
         binary = [model_folder + x + '.caffemodel' for x in ['det1', 'det2', 'det3']]

@@ -784,9 +784,4 @@ layer {
     }
   }
 }
-layer {
-  name: "norm1"
-  type: "Normalize"
-  bottom: "fc5"
-  top: "norm1"
-}
+

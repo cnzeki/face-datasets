@@ -1,19 +1,49 @@
 ## LFW test
 
 This repo contains codes for  the [LFW](http://vis-www.cs.umass.edu/lfw/) face verification test.
-Now , it supports for [centerface](https://github.com/ydwen/caffe-face) [sphereface](https://github.com/wy1iu/sphereface) [AMSoftmax](https://github.com/happynear/AMSoftmax) [arcface or insightface](https://github.com/deepinsight/insightface)
+Now , it supports for 
+- [centerface](https://github.com/ydwen/caffe-face)
+- [sphereface](https://github.com/wy1iu/sphereface)
+- [AMSoftmax](https://github.com/happynear/AMSoftmax) 
+- [arcface or insightface](https://github.com/deepinsight/insightface)
 
 And you can easily use it to test your own models.
 
-## Usage
+## Test steps
 
-### 1. Download the pre-aligned to 112x112 LFW dataset
+### 1. Prepare [LFW](http://vis-www.cs.umass.edu/lfw/)  dataset 
+Download lfw data
 
+```shell
+wget http://vis-www.cs.umass.edu/lfw/lfw.tgz
+wget http://vis-www.cs.umass.edu/lfw/pairs.txt
+tar zxf ./lfw.tgz lfw
+```
+
+Clone  [insightface](https://github.com/deepinsight/insightface) to $insightface, do alignment with:
+
+```shell
+python $insightface/src/align/align_lfw.py --input-dir=lfw --output-dir=lfw-112x112
+```
+
+### [Optional]
+Download the pre-aligned to 112x112 LFW dataset
 This data is transformed from the dataset provided by [arcface](https://github.com/deepinsight/insightface). I convert it from mxnet to numpy which nolonger requires mxnet.
 
 [lfw-112x112@BaiduDrive](https://pan.baidu.com/s/1uCOedn21j9ZDcm-7yYuhYA)
 
-### 2. Test your model
+**Notice** If you use this data , replace following `--lfw_data=lfw-112x112`  with  `--lfw_data=lfw.np`
+
+### 2. Prepare models
+Download the *`caffe`*  version of the model from each project and extract files to the corresponding directory  under `models`. 
+
+### 3. Run test
+
+```shell
+python run_verify.py --lfw_data=lfw-112x112 --model_name=centerface
+```
+
+### 4. Test custom model
 Add some code in `run_verify.py` to setup your model
 
 ```
@@ -42,30 +72,28 @@ def model_factory(name, do_mirror):
 Run your test with:
 
 ```shell
-python run_verify.py yours 
+python run_verify.py --lfw_data=lfw-112x112 --model_name=yours 
 ```
 
 By default verification will be done with `cosine` distance measure, to test with `L2` distance, run with
 
 ```shell
-python run_verify.py yours L2
+python run_verify.py --lfw_data=lfw-112x112 --model_name=yours --dist_type=L2
 ```
 Add to save testing time , the horizontal flip feature is not used, if you want to use it ,run with
 
 ```shell
-python run_verify.py yours L2 1
+python run_verify.py --lfw_data=lfw-112x112 --model_name=yours --dist_type=L2 --do_mirror=True
 ```
 
-### 3. Test other models.
-First follow the github link to each project and download the *`caffe`*  version of the model. Extract files to the corresponding directory  under `models`. 
-
+### 5. Results
 This is the result I got with default test configuration (flip not used, cosine distance). 
 
-| model      | image size | LFW-tested       | Offical |
-| ---------- | ---------- | ---------------- | ------- |
-| centerface | 96x112     | 0.97850+-0.00689 | 0.9928  |
-| sphereface | 96x112     | 0.98550+-0.00500 | 0.9930  |
-| AMSoftmax  | 96x112     | 0.98417+-0.00512 | 0.9908  |
-| arcface    | 112x112    | 0.99567+-0.00343 | 0.9974  |
+|   model    | image size |      LFW-tested      |  Offical   |
+| :--------: | :--------: | :------------------: | :--------: |
+| centerface |   96x112   |   0.98533+-0.00627   |   0.9928   |
+| sphereface |   96x112   |   0.99017+-0.00383   |   0.9930   |
+| AMSoftmax  |   96x112   |   0.98950+-0.00422   |   0.9908   |
+|  arcface   |  112x112   | **0.99567+-0.00382** | **0.9974** |
 
 

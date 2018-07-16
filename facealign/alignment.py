@@ -183,7 +183,7 @@ class FaceAlignVisitor(object):
                  dst_prefix,
                  detector,
                  skip_exist = True,
-                 transform = 'sililarity',
+                 transform = 'similarity',
                  pading = 0):
         
         self.src_prefix = src_prefix

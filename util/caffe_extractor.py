@@ -21,9 +21,9 @@ class CaffeExtractor:
     @staticmethod
     def norm_image(_im):
         #im = cv.cvtColor(im, cv.COLOR_RGB2BGR)
-        img = np.float32(_im)
+        img32 = np.float32(_im)
         #img = _im.astype(np.float32)
-        img = (img - 127.5) / 128
+        img = (img32 - 127.5) / 128
         img = np.transpose(img, [2, 0, 1])
         return img
 
