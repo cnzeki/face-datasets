@@ -6,6 +6,7 @@ Now , it supports for
 - [sphereface](https://github.com/wy1iu/sphereface)
 - [AMSoftmax](https://github.com/happynear/AMSoftmax) 
 - [arcface or insightface](https://github.com/deepinsight/insightface)
+- [MobileFaceNet](https://github.com/zuoqing1988/ZQCNN/wiki/Model-Zoo-for-Face-Recognition)
 
 And you can easily use it to test your own models.
 
@@ -89,11 +90,13 @@ python run_verify.py --lfw_data=lfw-112x112 --model_name=yours --dist_type=L2 --
 ### 5. Results
 This is the result I got with default test configuration (flip not used, cosine distance). 
 
-|   model    | image size |      LFW-tested      |  Offical   |
-| :--------: | :--------: | :------------------: | :--------: |
-| centerface |   96x112   |   0.98533+-0.00627   |   0.9928   |
-| sphereface |   96x112   |   0.99017+-0.00383   |   0.9930   |
-| AMSoftmax  |   96x112   |   0.98950+-0.00422   |   0.9908   |
-|  arcface   |  112x112   | **0.99567+-0.00382** | **0.9974** |
+|     model     | image size |      LFW-tested      |  Offical   |
+| :-----------: | :--------: | :------------------: | :--------: |
+|  centerface   |   96x112   |   0.98533+-0.00627   |   0.9928   |
+|  sphereface   |   96x112   |   0.99017+-0.00383   |   0.9930   |
+|   AMSoftmax   |   96x112   |   0.98950+-0.00422   |   0.9908   |
+| MobileFaceNet |  112x112   |   0.99483+-0.00320   |   0.9969   |
+|    arcface    |  112x112   | **0.99567+-0.00382** | **0.9974** |
+
 
 

@@ -29,6 +29,39 @@ def parse_line(line):
         return True, splits[0], splits[1], splits[0], splits[2]
     # name1 id1 name2 id2
     return False, splits[0], splits[1], splits[2], splits[3]
+
+def load_image_list(pair_list):    
+    img_list = []
+    for pair in pair_list:
+        # skip invalid pairs
+        if not os.path.exists(pair[0]) or not os.path.exists(pair[1]):
+            continue
+        img1 = cv2.imread(pair[0])
+        #img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2BGR)
+        img2 = cv2.imread(pair[1])
+        #img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
+        #print(img1.shape)
+        img_list.append([img1, img2, pair[0], pair[1]])
+    return img_list
+    
+def load_ytf_pairs(path, prefix):
+    pos_list_ = []
+    neg_list_ = []
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            line = line.strip()
+            flag, a, b = line.split(',')
+            flag = int(flag)
+            a = os.path.join(prefix, a)
+            b = os.path.join(prefix, b)
+            if flag == 1:
+                pos_list_.append([a, b])
+            else:
+                neg_list_.append([a, b])
+                
+    pos_img = load_image_list(pos_list_)
+    neg_img = load_image_list(neg_list_)
+    return pos_img, neg_img
     
     
 def load_image_paris(pair_path, prefix):
@@ -151,20 +184,20 @@ def model_arcface(do_mirror):
     extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc1')
     return extractor, image_size
     
-    
-    
+
+def model_mobileface(do_mirror):
+    model_dir = './models/mobilefacenet/'
+    model_proto = model_dir + 'mobilefacenet-res2-6-10-2-dim128-opencv.prototxt'
+    model_path = model_dir + 'mobilefacenet-res2-6-10-2-dim128.caffemodel'
+    image_size = (112, 112)
+    extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc1')
+    return extractor, image_size
+
+        
 def model_yours(do_mirror):
     model_dir = '/path/to/your/model/'
     model_proto = model_dir + 'deploy.prototxt'
     model_path = model_dir + 'weights.caffemodel'
-    image_size = (112, 112)
-    extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc5')
-    return extractor, image_size
-
-def model_tzk(do_mirror):
-    model_dir = '/home/ysten/tzk/fr/insightface/caffe/AMSoftmax/'
-    model_proto = model_dir + 'deploy.prototxt'
-    model_path = model_dir + 'tune_iter_20000.caffemodel'
     image_size = (112, 112)
     extractor = CaffeExtractor(model_proto, model_path, do_mirror = do_mirror, featLayer='fc5')
     return extractor, image_size
@@ -176,29 +209,18 @@ def model_factory(name, do_mirror):
         'sphereface':model_sphereface, 
         'AMSoftmax' :model_AMSoftmax, 
         'arcface'   :model_arcface,
+        'mobileface':model_mobileface, 
         'yours'     :model_yours, 
-        'tzk'       :model_tzk, 
     }
     model_func = model_dict[name]
-    return model_func(do_mirror)
-
-def check_lfw_data():
-    pos_1, _ = load_image_paris('./pairs.txt', '/home/ysten/denghui/fr/LFW_TEST/data/lfw-112X96')
-    pos_2, _ = load_image_paris('./pairs.txt', 'lfw-96x112')
-    count = 0
-    for idx in range(len(pos_1)):
-        diff = np.float32(pos_1[idx][0]) - np.float32(pos_2[idx][0])
-        diff = np.abs(diff)
-        abs_sum = np.sum(diff) / (96*112*3)
-        if abs_sum > 20:
-            count += 1
-            print('%4d %6.3f %s -- %s' % (idx, abs_sum, pos_1[idx][2], pos_2[idx][2]) )
-    print('%d'%count)   
+    return model_func(do_mirror) 
     
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lfw_data", help=" lfw.np or lfw-112x112")
+    parser.add_argument("--test_set", help="lfw | ytf")
+    parser.add_argument("--data",   help="lfw.np or pair.txt")
+    parser.add_argument("--prefix", help="data prefix")
     parser.add_argument("--model_name", help= 'specify which model to test \n'
                                               ' centerface\n'
                                               ' sphereface\n'
@@ -212,10 +234,10 @@ if __name__ == '__main__':
     output_dir = '.'
     # parse args   
     model_name = args.model_name
-    lfw_data = args.lfw_data
+    test_set = args.test_set
     dist_type = args.dist_type
     do_mirror = args.do_mirror
-    
+    print('Dataset  \t: %s (%s,%s)' % (args.test_set, args.data, args.prefix))
     print('Testing  \t: %s' % model_name)
     print('Distance \t: %s' % dist_type)
     print('Do mirror\t: {}'.format(do_mirror))
@@ -224,12 +246,14 @@ if __name__ == '__main__':
     print('Testing model\t: %s' % (extractor.weight))
     print('Image size\t: {}'.format(image_size))
     # load images
-    if lfw_data.find('.np') > 0:
-        pos_img, neg_img = pickle.load(open(lfw_data, 'rb'))
+    if args.data.find('.np') > 0:
+        pos_img, neg_img = pickle.load(open(args.data, 'rb'))
         #pos_img, neg_img = pickle.load(open(lfw_data, 'rb'), encoding='iso-8859-1')
-        
     else:
-        pos_img, neg_img = load_image_paris('./pairs.txt', lfw_data)
+        if args.test_set == 'lfw':
+            pos_img, neg_img = load_image_paris(args.data, args.prefix)
+        else:
+            pos_img, neg_img = load_ytf_pairs(args.data, args.prefix)
         
     # crop image
     pos_img = crop_image_list(pos_img, image_size)
@@ -242,14 +266,14 @@ if __name__ == '__main__':
     print('  Done positive pairs')
     neg_list = extract_feature(extractor, neg_img)
     print('  Done negative pairs')
-    print('Extracting features ...')
+
     # evaluate
     print('Evaluating ...')
     precision, std, threshold, pos, neg = verification(pos_list, neg_list, dist_type = dist_type)    
     _, title = os.path.split(extractor.weight)
     #draw_chart(title, output_dir, {'pos': pos, 'neg': neg}, precision, threshold)
     print('------------------------------------------------------------')
-    print('Precision on LFW : %1.5f+-%1.5f \nBest threshold   : %f' % (precision, std, threshold))
+    print('Precision on %s : %1.5f+-%1.5f \nBest threshold   : %f' % (args.test_set, precision, std, threshold))
    
    
 
