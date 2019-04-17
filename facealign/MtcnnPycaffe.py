@@ -10,6 +10,8 @@ import cv2
 import caffe
 
 import numpy as np
+import sys
+
 from alignment import alignface_96x112
 
 def draw_and_show(im, bboxes, points=None):
@@ -339,7 +341,7 @@ class MtcnnDetector(object):
                 input image
         Retures:
         -------
-            bboxes: numpy array, n x 5 (x1,y2,x2,y2,score)
+            bboxes: numpy array, n x 5 (x1,y1,x2,y2,score)
                 bboxes
             points: numpy array, n x 10 (x1, x2 ... x5, y1, y2 ..y5)
                 landmarks

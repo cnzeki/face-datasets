@@ -116,14 +116,14 @@ def alignface_96x112(img, points, pading=0, trans_type = 'similarity'):
     crop_imgs = []
     for p in points:
         shape  =[]
-        for k in range(len(p)/2):
+        for k in range(int(len(p)/2)):
             shape.append(p[k])
             shape.append(p[k+5])
 
         from_points = []
         to_points = []
 
-        for i in range(len(shape)/2):
+        for i in range(int(len(shape)/2)):
             x = mean_face_shape_x[i] + pading
             y = mean_face_shape_y[i] + pading
             to_points.append([x, y])
@@ -161,7 +161,7 @@ def align_to_96x112(img, points, pading=0, trans_type = 'similarity'):
     from_points = []
     to_points = []
 
-    for i in range(len(points)/2):
+    for i in range(int(len(points)/2)):
         if points[i] == None:
             continue
         x = mean_face_shape_x[i] + pading
@@ -173,7 +173,45 @@ def align_to_96x112(img, points, pading=0, trans_type = 'similarity'):
     chip = cv2.warpAffine(img, N, (96+2*pading, 112+2*pading) )
     return chip
 
+    
+def align_to_112x112(img, points, pading=0, trans_type = 'similarity'):
+    """
+        crop and align face
+    Parameters:
+    ----------
+        img: numpy array, bgr order of shape (1, 3, n, m)
+            input image
+        points: list, 1 x 10 (x1, x2 ... x5, y1, y2 ..y5)
+        padding: default 0
+        trans_type: similarity OR affine, default similarity
+    Return:
+    -------
+        cropped and aligned face
+    """
+    # average positions of face points
+    mean_face_shape_x = [30.2946, 65.5318, 48.0252, 33.5493, 62.7299]
+    mean_face_shape_y = [51.6963, 51.5014, 71.7366, 92.3655, 92.2041]
+    # tranform
+    tranform = compute_similarity_transform
+    if trans_type == 'affine' :
+        tranform = compute_affine_transform
+    # do the job
+    from_points = []
+    to_points = []
 
+    for i in range(int(len(points)/2)):
+        if points[i] == None:
+            continue
+        x = mean_face_shape_x[i] + pading + 8.0
+        y = mean_face_shape_y[i] + pading
+        to_points.append([x, y])
+        from_points.append([points[i], points[i + 5]])
+        
+    N = tranform(from_points,to_points)
+    chip = cv2.warpAffine(img, N, (112+2*pading, 112+2*pading) )
+    return chip
+    
+    
 class FaceAlignVisitor(object):
     """
         Megaface alignment
